@@ -1,6 +1,10 @@
 // 使用use关键字能将 模块标识符 引入 当前作用域
 use crate::saygoodbye_mod::sayGoodbye;
 use std::fs::File;
+use std::{io, fs, thread};
+use std::io::{Read, stdin};
+use std::time::Duration;
+use std::sync::mpsc;
 
 mod saygoodbye_mod;
 
@@ -337,6 +341,183 @@ fn main() {
 
     // Rust中可以通过在 Result对象后添加 ?操作符 来将 同类的Err直接传递出去
     // ?操作符: 将Result类 非异常的值取出, 如果有异常则将 异常的Result返回出去(故 ?操作符 仅适用于 返回值类型为Result<T, E>的函数)
+
+    // 可以通过 Err.kind()方法来获取 错误的具体类型, 搭配match语句 来实现错误处理.
+    fn read_text_from_file(path: &str) -> Result<String, io::Error> {
+        let mut f = File::open(path)?;
+        let mut s = String::new();
+        f.read_to_string(&mut s)?;
+        Ok(s)
+    }
+
+    let str_file = read_text_from_file("hello.txt");
+    match str_file {
+        Ok(s) => println!("{}", s),
+        Err(e) => {
+            match e.kind() {
+                io::ErrorKind::NotFound => {
+                    println!("No such file");
+                },
+                _ => {
+                    println!("Cannot read the file");
+                }
+            }
+        }
+    }
+
+    // Rust中支持泛型
+    struct Point<T> {
+        x: T,
+        y: T
+    }
+
+    // Rust中存在 特性trait, 这有点类似Java中的interface
+    // 可以使用 trait 来表示 类中有哪些方法
+    trait Eater {
+        fn eat();
+    }
+
+    // 在类的实现中使用 for 来使用接口
+    impl Eater for Person {
+        fn eat() {
+            println!("person eat something.");
+        }
+    }
+    Person::eat();
+
+    // 特性trait 可以作为函数的参数
+    // 下面是通过 trait 来实现 Comparable功能的取最大值函数
+    /*
+            trait Comparable {
+            fn compare(&self, object: &Self) -> i8;
+        }
+
+        fn max<T: Comparable>(array: &[T]) -> &T {
+            let mut max_index = 0;
+            let mut i = 1;
+            while i < array.len() {
+                if array[i].compare(&array[max_index]) > 0 {
+                    max_index = i;
+                }
+                i += 1;
+            }
+            &array[max_index]
+        }
+
+        impl Comparable for f64 {
+            fn compare(&self, object: &f64) -> i8 {
+                if &self > &object { 1 }
+                else if &self == &object { 0 }
+                else { -1 }
+            }
+        }
+
+        fn main() {
+            let arr = [1.0, 3.0, 5.0, 4.0, 2.0];
+            println!("maximum of arr is {}", max(&arr));
+        }
+     */
+
+    // 特性trait可以作函数的返回值, 但是要求函数中 所有可能的返回值类型 必须完全一样.
+
+    // impl可以限制 实现方法的条件, 比如要求 T在已经实现B和C特性的情况下, 才可以实现该impl块
+    /*
+    struct A<T> {}
+
+    impl<T: B + C> A<T> {
+        fn d(&self) {}
+    }
+     */
+
+    // Rust中存在 生命周期 的概念, 同时支持 生命周期注释
+    // 生命周期注释: 用于描述 引用的生命周期
+
+    // 我们通过该使用 泛型声明 来规范 生命周期的名称
+    // 通过生命周期注释, 将返回值str的生命周期 声明为 与 传入参数的生命周期一致
+    // 注意: 所有用双引号包括的字符串常量所代表的精确数据类型都是 &'static str
+    fn longer_number<'a>(s1: &'a str, s2: &'a str) -> &'a str {
+        if s2.len() > s1.len() {
+            s2
+        } else {
+            s1
+        }
+    }
+
+    /* Rust支持基本的 命令行操作 和 IO操作 */
+
+    // 命令行操作
+    let mut str_buf = String::new();
+    stdin().read_line(&mut str_buf).expect("failed to read line.");
+    println!("your input line is: {}", str_buf);
+
+    // IO操作
+    let text = fs::read_to_string("D:\\ImportantData\\text.txt").unwrap();
+    println!("{}", text);
+
+    // Rust中关于文件操作并没有配套的close()操作, 因为Rust会在文件不再被使用的时候自动关闭.
+
+    /* Rust中提供集合和字符串 */
+
+    // 向量容器
+    let mut v: Vec<i32> = Vec::new();
+    // 也可以通过已有数组来创建vector
+    // let mut v = vec![100, 200];
+
+    v.push(100);
+    v.push(200);
+    // get方法无法保证一定取到值, 故返回值为Option类
+    for i in &v {
+        println!("{}", i);
+    }
+
+    // 字符串String的每个字符采用UTF-8编码, 每个char占用3个字节
+
+    /* 面向对象 */
+    // Rust不属于面向对象语言, 但是可以采用面向对象思想.
+    // 通过impl来为struct绑定方法 (self关键字)
+    // 通过手动编写new方法来模拟构造函数
+    // Rust中可以通过 trait 来实现"多态"
+    // Rust没有提供与"继承"相关的语法糖.
+
+    /* 并发编程 */
+
+    // Rust中可以通过spawn()来创建新线程
+    fn spawn_function() {
+        for i in 0..5 {
+            println!("spawned thread print {}", i);
+            thread::sleep(Duration::from_millis(1));
+        }
+    }
+
+    thread::spawn(spawn_function);
+    for i in 0..3 {
+        println!("main thread print {}", i);
+        thread::sleep(Duration::from_millis(1));
+    }
+
+    // Rust也支持 闭包 Closures
+    // 闭包相当于Rust中的lambda表达式
+    thread::spawn(|| {
+       for i in 0..100 {
+           println!("current value: {}", i);
+       }
+    });
+
+    // 使用move关键字来 强制所有权迁移, 避免在 当前子线程使用当前函数的资源
+    let s = "hello";
+    let handle = thread::spawn(move ||{
+        println!("{}", s);
+    });
+    handle.join().unwrap();
+
+    // Rust中的消息传递可以通过 管道Channel 来完成.
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let val = String::from("hi");
+        tx.send(val).unwrap();
+    });
+    let received = rx.recv().unwrap();
+    println!("Got: {}", received);
 
 }
 
