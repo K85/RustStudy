@@ -256,7 +256,7 @@ fn main() {
 
     // match语法除了可以处理 枚举类外, 还可以处理整数, 浮点数, 字符和字符串切片引用
 
-    // Go语言不支持null, 但可以使用Option枚举类 (配合match来进行判空)
+    // Rust语言不支持null, 但可以使用Option枚举类 (配合match来进行判空)
     let opt = Option::Some("Hello");
     // 当使用Option::None的时候, 必须帮助编译器手动指出 空值所关联的类型.
     let opt: Option<&str> = Option::None;
